@@ -1,0 +1,24 @@
+[project]
+name = "mistral-hack"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "accelerate>=0.27.0",
+    "bitsandbytes>=0.43.0",
+    "datasets>=3.0.0",
+    "dotenv>=0.9.9",
+    "huggingface-hub>=0.30.0",
+    "mistralai>=1.12.4",
+    "pandas>=2.0.0",
+    "peft>=0.10.0",
+    "ruff>=0.15.4",
+    "streamlit>=1.40.0",
+    "torch>=2.1.0",
+    "transformers>=4.40.0",
+    "trl>=0.8.0",
+    "wandb>=0.25.0",
+    "wandb-workspaces>=0.3.5",
+    "weave>=0.52.29",
+]

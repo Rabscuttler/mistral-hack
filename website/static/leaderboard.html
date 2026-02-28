@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard — Lyrics ELO</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="leaderboard-wrap">
+        <h1>Lyrics ELO Leaderboard</h1>
+        <div class="total" id="total">Loading...</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Approach</th>
+                    <th>ELO</th>
+                    <th>Record</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+        <p style="margin-top:24px"><a href="/">&larr; Back to judging</a></p>
+    </div>
+
+<script>
+(async function() {
+    const res = await fetch('/api/results');
+    const data = await res.json();
+
+    document.getElementById('total').textContent = data.total_judgments + ' total judgments';
+
+    const tbody = document.getElementById('tbody');
+    data.leaderboard.forEach((row, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td class="rank">' + (i + 1) + '</td>' +
+            '<td>' + escapeHtml(row.approach) + '</td>' +
+            '<td class="elo">' + row.elo + '</td>' +
+            '<td class="record">' + row.wins + 'W ' + row.losses + 'L ' + row.ties + 'T</td>';
+        tbody.appendChild(tr);
+    });
+
+    function escapeHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+    }
+})();
+</script>
+</body>
+</html>
