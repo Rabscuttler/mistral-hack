@@ -51,11 +51,13 @@ Generate lyrics using `mistral-medium-latest` with minimal prompting -- just gen
 **Approach**: Blind pairwise comparison. For each genre/theme pair, show lyrics from two approaches side-by-side (randomized left/right to prevent position bias). Human picks a winner or declares a tie. No absolute scoring.
 
 **Comparisons** (3 approaches = 3 pairs):
+
 - Baseline vs Prompt-Engineered
 - Baseline vs Fine-Tuned
 - Prompt-Engineered vs Fine-Tuned
 
 **Dimensions** (human picks winner per dimension):
+
 - Overall quality ("which would you rather listen to?")
 - Creativity / originality
 - Genre fit
@@ -71,6 +73,7 @@ Generate lyrics using `mistral-medium-latest` with minimal prompting -- just gen
 - **Per-session progress**: Each browser gets a random session ID (localStorage). Already-judged pairs are skipped on reload.
 
 **Data storage**:
+
 - `website/pairs.json` — All 126 A/B pairings baked in as a static JSON file. Rebuilt from `outputs/pairs.jsonl` by running `python website/build.py`.
 - `website/judgments.db` — SQLite database (WAL mode), created automatically on first app startup. Contains a single `judgments` table with columns: `id, pair_index, genre, theme, left_approach, right_approach, rating, session_id, timestamp`. Existing judgments from `outputs/judgments.jsonl` are auto-imported on first run.
 - **To export/backup**: just copy `website/judgments.db`. To reset: delete it and restart the app.

@@ -5,7 +5,6 @@ Production:   gunicorn -b 0.0.0.0:8080 app:app
 """
 
 import json
-import math
 import os
 import sqlite3
 import time
@@ -18,8 +17,6 @@ app = Flask(__name__, template_folder="static", static_folder="static")
 
 PAIRS_PATH = Path(__file__).resolve().parent / "pairs.json"
 DB_PATH = Path(__file__).resolve().parent / "judgments.db"
-K = 32
-INITIAL_ELO = 1500
 
 # Load pairs into memory at startup
 with open(PAIRS_PATH) as f:
@@ -94,35 +91,16 @@ def init_db():
     db.close()
 
 
-# --- ELO ---
+# --- Scoring ---
 
-def expected_score(ra: float, rb: float) -> float:
-    return 1.0 / (1.0 + math.pow(10, (rb - ra) / 400))
-
-
-def update_elo(ra: float, rb: float, result: str) -> tuple[float, float]:
-    ea = expected_score(ra, rb)
-    eb = 1 - ea
-    if result == "A wins":
-        sa, sb = 1.0, 0.0
-    elif result == "B wins":
-        sa, sb = 0.0, 1.0
-    else:
-        sa, sb = 0.5, 0.5
-    return ra + K * (sa - ea), rb + K * (sb - eb)
-
-
-def compute_results(db):
-    rows = db.execute("SELECT left_approach, right_approach, rating FROM judgments").fetchall()
-
-    elos = defaultdict(lambda: INITIAL_ELO)
+def _tally(rows):
+    """Compute win rate and W/L/T from a list of judgment rows."""
     wins = defaultdict(int)
     losses = defaultdict(int)
     ties = defaultdict(int)
 
     for row in rows:
         a, b, rating = row["left_approach"], row["right_approach"], row["rating"]
-        elos[a], elos[b] = update_elo(elos[a], elos[b], rating)
         if rating == "A wins":
             wins[a] += 1
             losses[b] += 1
@@ -133,18 +111,46 @@ def compute_results(db):
             ties[a] += 1
             ties[b] += 1
 
-    approaches = sorted(set(elos.keys()), key=lambda x: -elos[x])
-    leaderboard = []
-    for ap in approaches:
-        leaderboard.append({
-            "approach": ap,
-            "elo": round(elos[ap]),
-            "wins": wins[ap],
-            "losses": losses[ap],
-            "ties": ties[ap],
-        })
+    all_approaches = sorted(set(wins) | set(losses) | set(ties))
 
-    return {"leaderboard": leaderboard, "total_judgments": len(rows)}
+    def win_rate(ap):
+        total = wins[ap] + losses[ap] + ties[ap]
+        if total == 0:
+            return 0
+        return (wins[ap] + 0.5 * ties[ap]) / total
+
+    all_approaches.sort(key=win_rate, reverse=True)
+    return [{
+        "approach": ap,
+        "win_rate": round(win_rate(ap) * 100),
+        "wins": wins[ap],
+        "losses": losses[ap],
+        "ties": ties[ap],
+    } for ap in all_approaches]
+
+
+def compute_results(db):
+    rows = db.execute("SELECT left_approach, right_approach, rating, session_id, timestamp FROM judgments ORDER BY timestamp").fetchall()
+
+    # All-time leaderboard
+    leaderboard = _tally(rows)
+
+    # Per-session breakdowns
+    sessions_map = defaultdict(list)
+    for row in rows:
+        sessions_map[row["session_id"]].append(row)
+
+    sessions = []
+    for sid, srows in sessions_map.items():
+        sessions.append({
+            "session_id": sid,
+            "count": len(srows),
+            "results": _tally(srows),
+        })
+    # Sort by first judgment timestamp
+    sessions.sort(key=lambda s: min(r["timestamp"] for r in sessions_map[s["session_id"]]))
+
+    return {"leaderboard": leaderboard, "total_judgments": len(rows), "sessions": sessions}
 
 
 # --- Routes ---

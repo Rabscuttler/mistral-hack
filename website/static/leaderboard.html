@@ -1,53 +1,110 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Leaderboard — Lyrics ELO</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-top">
+        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="/">Judge</a> <a href="/leaderboard">Leaderboard</a></nav></div>
+      </div>
+    </div>
     <div class="leaderboard-wrap">
-        <h1>Lyrics ELO Leaderboard</h1>
-        <div class="total" id="total">Loading...</div>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Approach</th>
-                    <th>ELO</th>
-                    <th>Record</th>
-                </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-        </table>
-        <p style="margin-top:24px"><a href="/">&larr; Back to judging</a></p>
+      <div class="total" id="total">Loading...</div>
+
+      <h2 class="section-title">All Time</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Approach</th>
+            <th>Win %</th>
+            <th>Record</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-alltime"></tbody>
+      </table>
+
+      <h2 class="section-title" id="sessions-heading" style="display: none">
+        Sessions
+      </h2>
+      <div id="sessions"></div>
+
     </div>
 
-<script>
-(async function() {
-    const res = await fetch('/api/results');
-    const data = await res.json();
+    <script>
+      (async function () {
+        const res = await fetch("/api/results");
+        const data = await res.json();
 
-    document.getElementById('total').textContent = data.total_judgments + ' total judgments';
+        document.getElementById("total").textContent =
+          data.total_judgments + " total judgments";
 
-    const tbody = document.getElementById('tbody');
-    data.leaderboard.forEach((row, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML =
-            '<td class="rank">' + (i + 1) + '</td>' +
-            '<td>' + escapeHtml(row.approach) + '</td>' +
-            '<td class="elo">' + row.elo + '</td>' +
-            '<td class="record">' + row.wins + 'W ' + row.losses + 'L ' + row.ties + 'T</td>';
-        tbody.appendChild(tr);
-    });
+        // All-time table
+        fillTable(document.getElementById("tbody-alltime"), data.leaderboard);
 
-    function escapeHtml(s) {
-        const d = document.createElement('div');
-        d.textContent = s;
-        return d.innerHTML;
-    }
-})();
-</script>
-</body>
+        // Per-session blocks
+        if (data.sessions && data.sessions.length > 0) {
+          document.getElementById("sessions-heading").style.display = "block";
+          const container = document.getElementById("sessions");
+
+          data.sessions.forEach((session, idx) => {
+            const block = document.createElement("div");
+            block.className = "session-block";
+
+            const label = document.createElement("div");
+            label.className = "session-label";
+            label.textContent =
+              "Round " + (idx + 1) + " (" + session.count + " judgments)";
+            block.appendChild(label);
+
+            const table = document.createElement("table");
+            const thead = document.createElement("thead");
+            thead.innerHTML =
+              "<tr><th>#</th><th>Approach</th><th>Win %</th><th>Record</th></tr>";
+            table.appendChild(thead);
+            const tbody = document.createElement("tbody");
+            fillTable(tbody, session.results);
+            table.appendChild(tbody);
+            block.appendChild(table);
+
+            container.appendChild(block);
+          });
+        }
+
+        function fillTable(tbody, rows) {
+          rows.forEach((row, i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML =
+              '<td class="rank">' +
+              (i + 1) +
+              "</td>" +
+              "<td>" +
+              escapeHtml(row.approach) +
+              "</td>" +
+              '<td class="elo">' +
+              row.win_rate +
+              "%</td>" +
+              '<td class="record">' +
+              row.wins +
+              "W " +
+              row.losses +
+              "L " +
+              row.ties +
+              "T</td>";
+            tbody.appendChild(tr);
+          });
+        }
+
+        function escapeHtml(s) {
+          const d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+      })();
+    </script>
+  </body>
 </html>
