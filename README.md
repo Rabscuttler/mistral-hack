@@ -15,7 +15,10 @@ BONUS SONGS:
 
 Browse and compare generated lyrics at the GitHub Pages site (configure Pages to serve from `docs/` on `main`).
 
-## Structure
+## What happened here? 
+Real lyrics dataset from Genius via kaggle: https://www.kaggle.com/datasets/nikhilnayak123/5-million-song-lyrics-dataset  
+Mistral-7B used as base model.  
+[Hugging Face TRL](https://huggingface.co/docs/trl/en/index) used for fine tuning, and HF Jobs for infra. WandB logging everything.  
 
 - `generate.py` — Generate lyrics (baseline, prompt-engineered, fine-tuned)
 - `eval_loop.py` — Self-improving prompt optimization loop with Weave evaluations
