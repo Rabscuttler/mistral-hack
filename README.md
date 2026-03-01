@@ -3,6 +3,8 @@
 Better song lyrics with supervised fine tuning with Mistral-7B.
 AI-generated song lyrics — baseline vs prompt-engineered vs fine-tuned Mistral models, evaluated by automated scorers and blind human judgment.
 
+Lyric comparison site: https://rabscuttler.github.io/mistral-hack/ (Your selections unfortunately won't be saved)
+
 [WandB report](https://wandb.ai/furbnow/mistral-hackathon/reports/Mistral-Global-Hackathon-Improving-GenAI-Song-Lyrics--VmlldzoxNjA2OTg3NQ?accessToken=q0wdn6shg3inryd3z136yfl0d9ig42332xwsg4aigck675fkvrpo2e4ipt0wx6yb)
 
 BONUS SONGS:    
