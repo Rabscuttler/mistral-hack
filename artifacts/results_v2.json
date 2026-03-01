@@ -1,0 +1,104 @@
+{
+  "output": {
+    "usage": {
+      "prompt_tokens": {
+        "mean": 369.9166666666667
+      },
+      "completion_tokens": {
+        "mean": 268.25
+      }
+    }
+  },
+  "NaturalnessScorer": {
+    "naturalness_score": {
+      "mean": 0.6519978196867123
+    },
+    "word_count": {
+      "mean": 161.83333333333334
+    },
+    "unique_ratio": {
+      "mean": 0.5976666666666667
+    },
+    "line_count": {
+      "mean": 23.166666666666668
+    },
+    "repeat_frac": {
+      "mean": 0.26625000000000004
+    },
+    "contraction_rate": {
+      "mean": 0.000525
+    },
+    "word_count_score": {
+      "mean": 0.8721666666666668
+    },
+    "unique_ratio_score": {
+      "mean": 0.6584166666666667
+    },
+    "line_count_score": {
+      "mean": 0.8053333333333333
+    },
+    "repeat_frac_score": {
+      "mean": 0.441
+    },
+    "contraction_score": {
+      "mean": 0.4825833333333332
+    }
+  },
+  "RhymeScorer": {
+    "rhyme_score": {
+      "mean": 0.7588333333333334
+    },
+    "rhyme_rate": {
+      "mean": 0.11008333333333332
+    },
+    "rhyme_pairs": {
+      "mean": 1.4166666666666667
+    },
+    "total_pairs": {
+      "mean": 11.333333333333334
+    }
+  },
+  "AuthenticityScorer": {
+    "authenticity_score": {
+      "mean": 0.9879166666666667
+    },
+    "meta_commentary": {
+      "mean": 0.0
+    },
+    "formal_words": {
+      "mean": 0.0
+    },
+    "formal_expansions": {
+      "mean": 0.0
+    },
+    "header_ratio": {
+      "mean": 0.09941666666666665
+    }
+  },
+  "LLMJudgeScorer": {
+    "emotional_impact": {
+      "mean": 8.0
+    },
+    "singability": {
+      "mean": 8.083333333333334
+    },
+    "originality": {
+      "mean": 6.333333333333333
+    },
+    "genre_fit": {
+      "mean": 8.833333333333334
+    },
+    "overall": {
+      "mean": 7.416666666666667
+    }
+  },
+  "GenreClassifierScorer": {
+    "genre_match": {
+      "true_count": 10,
+      "true_fraction": 0.8333333333333334
+    }
+  },
+  "model_latency": {
+    "mean": 5.230283280213674
+  }
+}

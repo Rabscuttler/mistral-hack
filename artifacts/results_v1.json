@@ -1,0 +1,104 @@
+{
+  "output": {
+    "usage": {
+      "prompt_tokens": {
+        "mean": 335.9166666666667
+      },
+      "completion_tokens": {
+        "mean": 270.25
+      }
+    }
+  },
+  "NaturalnessScorer": {
+    "naturalness_score": {
+      "mean": 0.6478674821585172
+    },
+    "word_count": {
+      "mean": 173.91666666666666
+    },
+    "unique_ratio": {
+      "mean": 0.5601666666666667
+    },
+    "line_count": {
+      "mean": 23.583333333333332
+    },
+    "repeat_frac": {
+      "mean": 0.2970833333333333
+    },
+    "contraction_rate": {
+      "mean": 0.0
+    },
+    "word_count_score": {
+      "mean": 0.8962499999999999
+    },
+    "unique_ratio_score": {
+      "mean": 0.7800833333333334
+    },
+    "line_count_score": {
+      "mean": 0.8113333333333332
+    },
+    "repeat_frac_score": {
+      "mean": 0.2758333333333333
+    },
+    "contraction_score": {
+      "mean": 0.47499999999999987
+    }
+  },
+  "RhymeScorer": {
+    "rhyme_score": {
+      "mean": 0.7104166666666667
+    },
+    "rhyme_rate": {
+      "mean": 0.07075
+    },
+    "rhyme_pairs": {
+      "mean": 0.8333333333333334
+    },
+    "total_pairs": {
+      "mean": 11.5
+    }
+  },
+  "AuthenticityScorer": {
+    "authenticity_score": {
+      "mean": 0.9874166666666667
+    },
+    "meta_commentary": {
+      "mean": 0.0
+    },
+    "formal_words": {
+      "mean": 0.0
+    },
+    "formal_expansions": {
+      "mean": 0.0
+    },
+    "header_ratio": {
+      "mean": 0.07508333333333332
+    }
+  },
+  "LLMJudgeScorer": {
+    "emotional_impact": {
+      "mean": 8.0
+    },
+    "singability": {
+      "mean": 8.083333333333334
+    },
+    "originality": {
+      "mean": 6.75
+    },
+    "genre_fit": {
+      "mean": 8.833333333333334
+    },
+    "overall": {
+      "mean": 7.583333333333333
+    }
+  },
+  "GenreClassifierScorer": {
+    "genre_match": {
+      "true_count": 12,
+      "true_fraction": 1.0
+    }
+  },
+  "model_latency": {
+    "mean": 4.839808682600657
+  }
+}

@@ -40,17 +40,20 @@ HUB_MODEL_ID = os.environ.get("HUB_MODEL_ID", "laurence-furbnow/mistral-7b-lyric
 WANDB_PROJECT = os.environ.get("WANDB_PROJECT", "mistral-hackathon")
 
 # LoRA config
-LORA_R = 16
-LORA_ALPHA = 32
-LORA_DROPOUT = 0.05
+LORA_R = int(os.environ.get("LORA_R", "16"))
+LORA_ALPHA = int(os.environ.get("LORA_ALPHA", "32"))
+LORA_DROPOUT = float(os.environ.get("LORA_DROPOUT", "0.05"))
+TARGET_MODULES = os.environ.get("TARGET_MODULES", "")  # comma-separated; empty = default all
 
 # Training config
-NUM_EPOCHS = 1
-BATCH_SIZE = 16
-GRADIENT_ACCUMULATION = 2
-LEARNING_RATE = 2e-4
+NUM_EPOCHS = int(os.environ.get("NUM_EPOCHS", "1"))
+BATCH_SIZE = int(os.environ.get("BATCH_SIZE", "4"))
+GRADIENT_ACCUMULATION = int(os.environ.get("GRADIENT_ACCUMULATION", "8"))
+LEARNING_RATE = float(os.environ.get("LEARNING_RATE", "2e-4"))
+WANDB_RUN_NAME = os.environ.get("WANDB_RUN_NAME", "lyrics-sft")
 MAX_LENGTH = 2048
-WARMUP_RATIO = 0.03
+WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.03"))
+MAX_TRAIN_SAMPLES = int(os.environ.get("MAX_TRAIN_SAMPLES", "0"))  # 0 = use all
 
 # Tiny model for dry-run (small GPT-2 variant that's fast on CPU)
 DRY_RUN_MODEL = "sshleifer/tiny-gpt2"
@@ -99,7 +102,7 @@ def main():
     # W&B
     if dry_run:
         os.environ["WANDB_MODE"] = "disabled"
-    wandb.init(project=WANDB_PROJECT, name="lyrics-sft" + ("-dry-run" if dry_run else ""))
+    wandb.init(project=WANDB_PROJECT, name=WANDB_RUN_NAME + ("-dry-run" if dry_run else ""))
 
     # Dataset
     if dry_run:
@@ -110,6 +113,15 @@ def main():
         dataset = load_dataset(DATASET_REPO)
         train_dataset = dataset["train"]
         eval_dataset = dataset["validation"]
+
+    # Subsample if requested
+    if not dry_run and MAX_TRAIN_SAMPLES > 0 and len(train_dataset) > MAX_TRAIN_SAMPLES:
+        print(f"Subsampling train from {len(train_dataset)} to {MAX_TRAIN_SAMPLES}...")
+        train_dataset = train_dataset.shuffle(seed=42).select(range(MAX_TRAIN_SAMPLES))
+        # Proportionally subsample val too
+        val_samples = max(1000, MAX_TRAIN_SAMPLES // 10)
+        if len(eval_dataset) > val_samples:
+            eval_dataset = eval_dataset.shuffle(seed=42).select(range(val_samples))
 
     train_dataset = train_dataset.map(parse_messages)
     eval_dataset = eval_dataset.map(parse_messages)
@@ -151,6 +163,9 @@ def main():
     if dry_run:
         target_modules = ["c_attn"]
         lora_r = 4
+    elif TARGET_MODULES:
+        target_modules = [m.strip() for m in TARGET_MODULES.split(",")]
+        lora_r = LORA_R
     else:
         target_modules = ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
         lora_r = LORA_R

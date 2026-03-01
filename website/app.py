@@ -17,6 +17,7 @@ app = Flask(__name__, template_folder="static", static_folder="static")
 
 PAIRS_PATH = Path(__file__).resolve().parent / "pairs.json"
 DB_PATH = Path(__file__).resolve().parent / "judgments.db"
+OUTPUTS_DIR = Path(__file__).resolve().parent.parent / "outputs"
 
 # Load pairs into memory at startup
 with open(PAIRS_PATH) as f:
@@ -135,22 +136,17 @@ def compute_results(db):
     # All-time leaderboard
     leaderboard = _tally(rows)
 
-    # Per-session breakdowns
-    sessions_map = defaultdict(list)
-    for row in rows:
-        sessions_map[row["session_id"]].append(row)
-
-    sessions = []
-    for sid, srows in sessions_map.items():
-        sessions.append({
-            "session_id": sid,
-            "count": len(srows),
-            "results": _tally(srows),
+    # Blocks of 10, most recent first
+    reversed_rows = list(reversed(rows))
+    blocks = []
+    for i in range(0, len(reversed_rows), 10):
+        chunk = reversed_rows[i:i + 10]
+        blocks.append({
+            "count": len(chunk),
+            "results": _tally(chunk),
         })
-    # Sort by first judgment timestamp
-    sessions.sort(key=lambda s: min(r["timestamp"] for r in sessions_map[s["session_id"]]))
 
-    return {"leaderboard": leaderboard, "total_judgments": len(rows), "sessions": sessions}
+    return {"leaderboard": leaderboard, "total_judgments": len(rows), "blocks": blocks}
 
 
 # --- Routes ---
@@ -163,6 +159,11 @@ def index():
 @app.route("/leaderboard")
 def leaderboard():
     return render_template("leaderboard.html")
+
+
+@app.route("/browse")
+def browse():
+    return render_template("browse.html")
 
 
 @app.route("/api/pairs")
@@ -207,6 +208,32 @@ def api_judge():
 def api_results():
     db = get_db()
     return jsonify(compute_results(db))
+
+
+@app.route("/api/songs")
+def api_songs():
+    """Load all generated songs from outputs/ directory."""
+    SOURCE_FILES = {
+        "baseline": "baseline.jsonl",
+        "prompt_engineered": "prompt_engineered.jsonl",
+        "finetuned_original": "finetuned.jsonl",
+        "finetuned_gentle": "finetuned_gentle.jsonl",
+        "finetuned_wide_attn": "finetuned_wide-attn.jsonl",
+        "real": "real.jsonl",
+    }
+    songs = []
+    for source, filename in SOURCE_FILES.items():
+        path = OUTPUTS_DIR / filename
+        if not path.exists():
+            continue
+        with open(path) as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                song = json.loads(line)
+                song["source"] = source
+                songs.append(song)
+    return jsonify(songs)
 
 
 @app.route("/api/progress/<session_id>")

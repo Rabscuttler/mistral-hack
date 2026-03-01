@@ -1,6 +1,7 @@
 """Weave-traced Mistral models for lyrics generation."""
 
 import os
+import time
 
 import weave
 from mistralai import Mistral
@@ -8,6 +9,21 @@ from mistralai import Mistral
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def _mistral_chat_with_retry(client, **kwargs) -> object:
+    """Call Mistral chat.complete with exponential backoff on rate limits."""
+    for attempt in range(5):
+        try:
+            return client.chat.complete(**kwargs)
+        except Exception as e:
+            if "429" in str(e) or "rate_limit" in str(e).lower():
+                wait = 2 ** attempt + 1
+                print(f"  [Rate limited] Retrying in {wait}s (attempt {attempt + 1}/5)")
+                time.sleep(wait)
+            else:
+                raise
+    return client.chat.complete(**kwargs)
 
 
 class MistralLyricsModel(weave.Model):
@@ -29,7 +45,8 @@ class MistralLyricsModel(weave.Model):
             messages.append({"role": "system", "content": self.system_prompt})
         messages.append({"role": "user", "content": user_prompt})
 
-        response = client.chat.complete(
+        response = _mistral_chat_with_retry(
+            client,
             model=self.model_name,
             messages=messages,
             temperature=self.temperature,
@@ -80,7 +97,8 @@ class PromptEngineeredLyricsModel(weave.Model):
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": user_prompt})
 
-        response = client.chat.complete(
+        response = _mistral_chat_with_retry(
+            client,
             model=self.model_name,
             messages=messages,
             temperature=self.temperature,

@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browse Songs</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+      .browse-wrap {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .filters {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        align-items: center;
+      }
+
+      .filters select,
+      .filters input {
+        font-family: inherit;
+        font-size: 14px;
+        padding: 8px 12px;
+        background: #21262d;
+        color: #f0f3f6;
+        border: 1px solid #3d444d;
+        border-radius: 6px;
+        outline: none;
+      }
+
+      .filters select:focus,
+      .filters input:focus {
+        border-color: #6cb6ff;
+      }
+
+      .filters label {
+        font-size: 13px;
+        color: #b1bac4;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .view-toggle {
+        display: flex;
+        gap: 4px;
+        margin-left: auto;
+      }
+
+      .view-toggle button {
+        font-family: inherit;
+        font-size: 13px;
+        padding: 6px 14px;
+        background: #21262d;
+        color: #b1bac4;
+        border: 1px solid #3d444d;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+
+      .view-toggle button.active {
+        background: #30363d;
+        color: #f0f3f6;
+        border-color: #6cb6ff;
+      }
+
+      .song-count {
+        font-size: 14px;
+        color: #6e7681;
+        margin-bottom: 16px;
+      }
+
+      /* List view */
+      .song-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .song-card {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .song-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: #1c2129;
+        border-bottom: 1px solid #30363d;
+      }
+
+      .song-meta {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .tag {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+
+      .tag-source {
+        background: #1f3d2b;
+        color: #3fb950;
+      }
+
+      .tag-source.baseline {
+        background: #2d1f1f;
+        color: #f47067;
+      }
+
+      .tag-source.prompt_engineered {
+        background: #1f2d3d;
+        color: #6cb6ff;
+      }
+
+      .tag-source.finetuned_original {
+        background: #1f3d2b;
+        color: #3fb950;
+      }
+
+      .tag-source.finetuned_gentle {
+        background: #2b1f3d;
+        color: #bc8cff;
+      }
+
+      .tag-source.finetuned_wide_attn {
+        background: #3d2b1f;
+        color: #f0883e;
+      }
+
+      .tag-source.real {
+        background: #3d3d1f;
+        color: #d2a641;
+      }
+
+      .tag-genre {
+        background: #21262d;
+        color: #b1bac4;
+      }
+
+      .song-theme {
+        font-size: 14px;
+        color: #b1bac4;
+      }
+
+      .song-stats {
+        font-size: 12px;
+        color: #6e7681;
+      }
+
+      .song-body {
+        padding: 16px;
+      }
+
+      .song-body pre {
+        white-space: pre-wrap;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #e6edf3;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .song-body.collapsed pre {
+        max-height: 200px;
+        overflow: hidden;
+        mask-image: linear-gradient(to bottom, black 70%, transparent);
+        -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent);
+      }
+
+      .expand-btn {
+        display: block;
+        width: 100%;
+        padding: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        background: #1c2129;
+        color: #6cb6ff;
+        border: none;
+        border-top: 1px solid #30363d;
+        cursor: pointer;
+      }
+
+      .expand-btn:hover {
+        background: #21262d;
+      }
+
+      /* Side-by-side view */
+      .compare-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .compare-grid .song-card {
+        break-inside: avoid;
+      }
+
+      /* Compare mode: pick two sources */
+      .compare-selectors {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+        align-items: center;
+      }
+
+      .compare-selectors span {
+        font-size: 14px;
+        color: #6e7681;
+      }
+
+      .nav a.active {
+        color: #f0f3f6;
+        font-weight: 600;
+      }
+
+      @media (max-width: 900px) {
+        .compare-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <h1>Browse Songs</h1>
+          <nav class="nav">
+            <a href="/">Judge</a>
+            <a href="/leaderboard">Leaderboard</a>
+            <a href="/browse" class="active">Browse</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <div class="browse-wrap">
+      <div class="filters">
+        <div class="filter-group">
+          <label>Source</label>
+          <select id="filter-source">
+            <option value="all">All Sources</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Genre</label>
+          <select id="filter-genre">
+            <option value="all">All Genres</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Theme</label>
+          <select id="filter-theme">
+            <option value="all">All Themes</option>
+          </select>
+        </div>
+        <div class="view-toggle">
+          <button id="btn-list" class="active">List</button>
+          <button id="btn-compare">Compare</button>
+        </div>
+      </div>
+
+      <div id="compare-selectors" class="compare-selectors" style="display: none">
+        <span>Left:</span>
+        <select id="compare-left"></select>
+        <span>Right:</span>
+        <select id="compare-right"></select>
+      </div>
+
+      <div class="song-count" id="song-count"></div>
+
+      <div id="songs-container"></div>
+    </div>
+
+    <script>
+      const SOURCE_LABELS = {
+        baseline: "Baseline",
+        prompt_engineered: "Prompt Engineered",
+        finetuned_original: "Fine-tuned (Original)",
+        finetuned_gentle: "Fine-tuned (Gentle)",
+        finetuned_wide_attn: "Fine-tuned (Wide Attn)",
+        real: "Real Song",
+      };
+
+      let allSongs = [];
+      let viewMode = "list"; // "list" or "compare"
+
+      async function loadSongs() {
+        const res = await fetch("/api/songs");
+        allSongs = await res.json();
+
+        // Populate filter dropdowns
+        const sources = [...new Set(allSongs.map((s) => s.source))].sort();
+        const genres = [...new Set(allSongs.map((s) => s.genre))].sort();
+
+        const srcSel = document.getElementById("filter-source");
+        sources.forEach((s) => {
+          const opt = document.createElement("option");
+          opt.value = s;
+          opt.textContent = SOURCE_LABELS[s] || s;
+          srcSel.appendChild(opt);
+        });
+
+        const genreSel = document.getElementById("filter-genre");
+        genres.forEach((g) => {
+          const opt = document.createElement("option");
+          opt.value = g;
+          opt.textContent = g.charAt(0).toUpperCase() + g.slice(1);
+          genreSel.appendChild(opt);
+        });
+
+        // Compare selectors
+        const cmpLeft = document.getElementById("compare-left");
+        const cmpRight = document.getElementById("compare-right");
+        sources.forEach((s) => {
+          [cmpLeft, cmpRight].forEach((sel) => {
+            const opt = document.createElement("option");
+            opt.value = s;
+            opt.textContent = SOURCE_LABELS[s] || s;
+            sel.appendChild(opt);
+          });
+        });
+        if (sources.length >= 2) {
+          cmpLeft.value = sources[0];
+          cmpRight.value = sources[1];
+        }
+
+        updateThemeFilter();
+        render();
+      }
+
+      function updateThemeFilter() {
+        const genre = document.getElementById("filter-genre").value;
+        const filtered =
+          genre === "all"
+            ? allSongs
+            : allSongs.filter((s) => s.genre === genre);
+        const themes = [...new Set(filtered.map((s) => s.theme))].sort();
+
+        const themeSel = document.getElementById("filter-theme");
+        const current = themeSel.value;
+        themeSel.innerHTML = '<option value="all">All Themes</option>';
+        themes.forEach((t) => {
+          const opt = document.createElement("option");
+          opt.value = t;
+          opt.textContent = t;
+          themeSel.appendChild(opt);
+        });
+        if (themes.includes(current)) themeSel.value = current;
+      }
+
+      function getFiltered() {
+        const source = document.getElementById("filter-source").value;
+        const genre = document.getElementById("filter-genre").value;
+        const theme = document.getElementById("filter-theme").value;
+
+        return allSongs.filter((s) => {
+          if (source !== "all" && s.source !== source) return false;
+          if (genre !== "all" && s.genre !== genre) return false;
+          if (theme !== "all" && s.theme !== theme) return false;
+          return true;
+        });
+      }
+
+      function wordCount(text) {
+        return text.split(/\s+/).filter((w) => w).length;
+      }
+
+      function songCard(song, collapsed = true) {
+        const words = wordCount(song.lyrics);
+        const lines = song.lyrics
+          .split("\n")
+          .filter((l) => l.trim()).length;
+        const sourceLabel = SOURCE_LABELS[song.source] || song.source;
+
+        return `
+          <div class="song-card">
+            <div class="song-header">
+              <div class="song-meta">
+                <span class="tag tag-source ${song.source}">${sourceLabel}</span>
+                <span class="tag tag-genre">${song.genre}</span>
+                <span class="song-theme">${song.theme}</span>
+              </div>
+              <span class="song-stats">${words} words &middot; ${lines} lines</span>
+            </div>
+            <div class="song-body ${collapsed ? "collapsed" : ""}">
+              <pre>${escapeHtml(song.lyrics)}</pre>
+            </div>
+            ${collapsed ? '<button class="expand-btn" onclick="toggleExpand(this)">Show full lyrics</button>' : ""}
+          </div>
+        `;
+      }
+
+      function escapeHtml(text) {
+        const div = document.createElement("div");
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      window.toggleExpand = function (btn) {
+        const body = btn.previousElementSibling;
+        if (body.classList.contains("collapsed")) {
+          body.classList.remove("collapsed");
+          btn.textContent = "Collapse";
+        } else {
+          body.classList.add("collapsed");
+          btn.textContent = "Show full lyrics";
+        }
+      };
+
+      function render() {
+        const container = document.getElementById("songs-container");
+        const countEl = document.getElementById("song-count");
+
+        if (viewMode === "list") {
+          const songs = getFiltered();
+          countEl.textContent = `${songs.length} songs`;
+          container.innerHTML = `<div class="song-list">${songs.map((s) => songCard(s)).join("")}</div>`;
+        } else {
+          renderCompare(container, countEl);
+        }
+      }
+
+      function renderCompare(container, countEl) {
+        const leftSource = document.getElementById("compare-left").value;
+        const rightSource = document.getElementById("compare-right").value;
+        const genre = document.getElementById("filter-genre").value;
+        const theme = document.getElementById("filter-theme").value;
+
+        const leftSongs = allSongs.filter((s) => {
+          if (s.source !== leftSource) return false;
+          if (genre !== "all" && s.genre !== genre) return false;
+          if (theme !== "all" && s.theme !== theme) return false;
+          return true;
+        });
+
+        const rightSongs = allSongs.filter((s) => {
+          if (s.source !== rightSource) return false;
+          if (genre !== "all" && s.genre !== genre) return false;
+          if (theme !== "all" && s.theme !== theme) return false;
+          return true;
+        });
+
+        // Match by genre+theme
+        const rightMap = {};
+        rightSongs.forEach((s) => {
+          rightMap[s.genre + "|" + s.theme] = s;
+        });
+
+        let html = '<div class="compare-grid">';
+        let matched = 0;
+
+        leftSongs.forEach((left) => {
+          const key = left.genre + "|" + left.theme;
+          const right = rightMap[key];
+          if (right) {
+            matched++;
+            html += songCard(left, false);
+            html += songCard(right, false);
+          }
+        });
+
+        html += "</div>";
+
+        countEl.textContent = `${matched} matched pairs (${SOURCE_LABELS[leftSource]} vs ${SOURCE_LABELS[rightSource]})`;
+        container.innerHTML = html;
+      }
+
+      // Event listeners
+      document
+        .getElementById("filter-source")
+        .addEventListener("change", render);
+      document.getElementById("filter-genre").addEventListener("change", () => {
+        updateThemeFilter();
+        render();
+      });
+      document
+        .getElementById("filter-theme")
+        .addEventListener("change", render);
+      document
+        .getElementById("compare-left")
+        .addEventListener("change", render);
+      document
+        .getElementById("compare-right")
+        .addEventListener("change", render);
+
+      document.getElementById("btn-list").addEventListener("click", () => {
+        viewMode = "list";
+        document.getElementById("btn-list").classList.add("active");
+        document.getElementById("btn-compare").classList.remove("active");
+        document.getElementById("compare-selectors").style.display = "none";
+        document.getElementById("filter-source").closest(".filter-group").style.display = "";
+        render();
+      });
+
+      document.getElementById("btn-compare").addEventListener("click", () => {
+        viewMode = "compare";
+        document.getElementById("btn-compare").classList.add("active");
+        document.getElementById("btn-list").classList.remove("active");
+        document.getElementById("compare-selectors").style.display = "flex";
+        document.getElementById("filter-source").closest(".filter-group").style.display = "none";
+        render();
+      });
+
+      loadSongs();
+    </script>
+  </body>
+</html>

@@ -1,5 +1,8 @@
 """Prompt engineering strategies for enhanced lyrics generation."""
 
+import json
+from pathlib import Path
+
 GENRE_SYSTEM_PROMPTS = {
     "pop": (
         "You are a hit-making pop songwriter. Your lyrics are catchy, emotionally resonant, "
@@ -86,3 +89,24 @@ FEW_SHOT_EXAMPLES = {
         "Every small disaster"
     ),
 }
+
+
+def get_prompts_config() -> dict:
+    """Return current prompts as a serializable dict."""
+    return {
+        "system_prompts": dict(GENRE_SYSTEM_PROMPTS),
+        "structural_instructions": STRUCTURAL_INSTRUCTIONS,
+        "few_shot_examples": dict(FEW_SHOT_EXAMPLES),
+    }
+
+
+def load_prompts_config(path: str | Path) -> dict:
+    """Load a prompts config from a JSON artifact file."""
+    with open(path) as f:
+        return json.load(f)
+
+
+def save_prompts_config(config: dict, path: str | Path) -> None:
+    """Save a prompts config to a JSON artifact file."""
+    with open(path, "w") as f:
+        json.dump(config, f, indent=2)

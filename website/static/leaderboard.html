@@ -9,7 +9,7 @@
   <body>
     <div class="header">
       <div class="header-top">
-        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="/">Judge</a> <a href="/leaderboard">Leaderboard</a></nav></div>
+        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="/">Judge</a> <a href="/leaderboard">Leaderboard</a> <a href="/browse">Browse</a></nav></div>
       </div>
     </div>
     <div class="leaderboard-wrap">
@@ -28,10 +28,10 @@
         <tbody id="tbody-alltime"></tbody>
       </table>
 
-      <h2 class="section-title" id="sessions-heading" style="display: none">
-        Sessions
+      <h2 class="section-title" id="rounds-heading" style="display: none">
+        Rounds
       </h2>
-      <div id="sessions"></div>
+      <div id="rounds"></div>
 
     </div>
 
@@ -46,19 +46,19 @@
         // All-time table
         fillTable(document.getElementById("tbody-alltime"), data.leaderboard);
 
-        // Per-session blocks
-        if (data.sessions && data.sessions.length > 0) {
-          document.getElementById("sessions-heading").style.display = "block";
-          const container = document.getElementById("sessions");
+        // Blocks of 10, most recent first
+        if (data.blocks && data.blocks.length > 0) {
+          document.getElementById("rounds-heading").style.display = "block";
+          const container = document.getElementById("rounds");
 
-          data.sessions.forEach((session, idx) => {
+          data.blocks.forEach((blk, idx) => {
             const block = document.createElement("div");
             block.className = "session-block";
 
             const label = document.createElement("div");
             label.className = "session-label";
             label.textContent =
-              "Round " + (idx + 1) + " (" + session.count + " judgments)";
+              "Round " + (data.blocks.length - idx) + " (" + blk.count + " judgments)";
             block.appendChild(label);
 
             const table = document.createElement("table");
@@ -67,7 +67,7 @@
               "<tr><th>#</th><th>Approach</th><th>Win %</th><th>Record</th></tr>";
             table.appendChild(thead);
             const tbody = document.createElement("tbody");
-            fillTable(tbody, session.results);
+            fillTable(tbody, blk.results);
             table.appendChild(tbody);
             block.appendChild(table);
 
