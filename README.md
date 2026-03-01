@@ -11,10 +11,6 @@ BONUS SONGS:
 [ElevenLabs - Ship it broken, Ship it Wild!](https://elevenlabs.io/music/songs/qA6JijrpX09dmHf8emTb) - skip to 48s for the bangin' chorus  
 [Ship it before sunrise (Suno)](https://suno.com/s/3WCo7L9cFqXLj9Nc)
 
-## Live Site
-
-Browse and compare generated lyrics at the GitHub Pages site (configure Pages to serve from `docs/` on `main`).
-
 ## What happened here? 
 Real lyrics dataset from Genius via kaggle: https://www.kaggle.com/datasets/nikhilnayak123/5-million-song-lyrics-dataset  
 Mistral-7B used as base model.  
@@ -32,15 +28,6 @@ Mistral-7B used as base model.
 ## Static Site
 
 Rebuild and deploy:
-
 ```bash
 python3 website/freeze.py   # outputs to docs/
-git add docs && git commit -m "rebuild static site"
-git push
-```
-
-## Dev Server
-
-```bash
-cd website && python3 app.py
 ```
