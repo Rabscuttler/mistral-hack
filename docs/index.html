@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lyrics Judge</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="static/style.css" />
   </head>
-  <body>
+  <body data-pairs-url="api/pairs.json">
     <div class="header">
       <div class="header-top">
-        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="/">Judge</a> <a href="/leaderboard">Leaderboard</a> <a href="/browse">Browse</a></nav></div>
+        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="index.html">Judge</a> <a href="leaderboard/index.html">Leaderboard</a> <a href="browse/index.html">Browse</a></nav></div>
         <div class="meta" id="meta"></div>
         <div class="progress" id="progress"></div>
       </div>
@@ -20,7 +20,7 @@
       </div>
       <div class="disclaimer" id="disclaimer" style="display: none">
         Showing lines 11&ndash;30 of each song for quicker judging. Full lyrics
-        may be longer.
+        may be longer. <em>(Static site &mdash; judgments are not saved.)</em>
       </div>
     </div>
 
@@ -39,9 +39,9 @@
 
     <div class="done" id="done" style="display: none">
       <h2>All done!</h2>
-      <p>You've judged every pair. Thanks for contributing.</p>
-      <a href="/leaderboard">View the leaderboard &rarr;</a>
-      <button id="reset">Start a new session</button>
+      <p>You've judged every pair in this round. Thanks for listening.</p>
+      <a href="leaderboard/index.html">View the leaderboard &rarr;</a>
+      <button id="reset">Start a new round</button>
     </div>
 
     <div class="flash-left" id="flash-left"></div>
@@ -49,17 +49,9 @@
 
     <script>
       (function () {
-        const SESSION_KEY = "lyrics_judge_session";
-        let sessionId = localStorage.getItem(SESSION_KEY);
-        if (!sessionId) {
-          sessionId = crypto.randomUUID();
-          localStorage.setItem(SESSION_KEY, sessionId);
-        }
-
         let pairs = [];
         let order = [];
         let current = 0;
-        let judgedSet = new Set();
         let locked = false;
 
         const $loading = document.getElementById("loading");
@@ -76,16 +68,11 @@
         const ROUND_SIZE = 10;
 
         async function init() {
-          const [pairsRes, progressRes] = await Promise.all([
-            fetch("/api/pairs").then((r) => r.json()),
-            fetch("/api/progress/" + sessionId).then((r) => r.json()),
-          ]);
+          const pairsUrl = document.body.dataset.pairsUrl;
+          const res = await fetch(pairsUrl);
+          pairs = await res.json();
 
-          pairs = pairsRes;
-          judgedSet = new Set(progressRes.judged);
-
-          // Build shuffled order, excluding already-judged, pick 10
-          order = pairs.map((_, i) => i).filter((i) => !judgedSet.has(i));
+          order = pairs.map((_, i) => i);
           shuffle(order);
           order = order.slice(0, ROUND_SIZE);
 
@@ -119,7 +106,6 @@
           $right.textContent = trimLyrics(pair.right_lyrics);
           $meta.innerHTML = "<span>" + escapeHtml(pair.genre) + "</span>";
           updateProgress();
-          // Scroll columns to top
           $left.parentElement.scrollTop = 0;
           $right.parentElement.scrollTop = 0;
         }
@@ -147,26 +133,14 @@
           }
         }
 
-        async function judge(rating) {
+        function judge(rating) {
           if (locked || current >= order.length) return;
           locked = true;
-
-          const pairIndex = order[current];
 
           if (rating === "A wins") flash("left");
           else if (rating === "B wins") flash("right");
 
-          await fetch("/api/judge", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              pair_index: pairIndex,
-              rating: rating,
-              session_id: sessionId,
-            }),
-          });
-
-          judgedSet.add(pairIndex);
+          // No server POST — static site, just advance locally
           current++;
 
           setTimeout(() => {
@@ -188,12 +162,9 @@
         }
 
         document.getElementById("reset").addEventListener("click", () => {
-          sessionId = crypto.randomUUID();
-          localStorage.setItem(SESSION_KEY, sessionId);
           $done.style.display = "none";
           $loading.style.display = "flex";
           current = 0;
-          judgedSet = new Set();
           order = pairs.map((_, i) => i);
           shuffle(order);
           order = order.slice(0, ROUND_SIZE);

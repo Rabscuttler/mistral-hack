@@ -4,12 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Leaderboard — Lyrics ELO</title>
-    <link rel="stylesheet" href="/static/style.css" />
+    <link rel="stylesheet" href="../static/style.css" />
   </head>
-  <body>
+  <body data-results-url="../api/results.json">
     <div class="header">
       <div class="header-top">
-        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="/">Judge</a> <a href="/leaderboard">Leaderboard</a> <a href="/browse">Browse</a></nav></div>
+        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="../index.html">Judge</a> <a href="index.html">Leaderboard</a> <a href="../browse/index.html">Browse</a></nav></div>
       </div>
     </div>
     <div class="leaderboard-wrap">
@@ -37,7 +37,8 @@
 
     <script>
       (async function () {
-        const res = await fetch("/api/results");
+        const resultsUrl = document.body.dataset.resultsUrl;
+        const res = await fetch(resultsUrl);
         const data = await res.json();
 
         document.getElementById("total").textContent =

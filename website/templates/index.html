@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lyrics Judge</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  </head>
+  <body data-pairs-url="{{ url_for('api_pairs') }}">
+    <div class="header">
+      <div class="header-top">
+        <div><h1>Lyrics Judge</h1><nav class="nav"><a href="{{ url_for('index') }}">Judge</a> <a href="{{ url_for('leaderboard') }}">Leaderboard</a> <a href="{{ url_for('browse') }}">Browse</a></nav></div>
+        <div class="meta" id="meta"></div>
+        <div class="progress" id="progress"></div>
+      </div>
+      <div class="controls" id="controls" style="display: none">
+        <div class="hint"><kbd>J</kbd> A wins</div>
+        <div class="hint"><kbd>Space</kbd> Tie</div>
+        <div class="hint"><kbd>K</kbd> B wins</div>
+      </div>
+      <div class="disclaimer" id="disclaimer" style="display: none">
+        Showing lines 11&ndash;30 of each song for quicker judging. Full lyrics
+        may be longer. <em>(Static site &mdash; judgments are not saved.)</em>
+      </div>
+    </div>
+
+    <div class="loading" id="loading">Loading pairs...</div>
+
+    <div class="columns" id="columns" style="display: none">
+      <div class="column">
+        <div class="column-label">A</div>
+        <pre class="lyrics" id="left"></pre>
+      </div>
+      <div class="column">
+        <div class="column-label">B</div>
+        <pre class="lyrics" id="right"></pre>
+      </div>
+    </div>
+
+    <div class="done" id="done" style="display: none">
+      <h2>All done!</h2>
+      <p>You've judged every pair in this round. Thanks for listening.</p>
+      <a href="{{ url_for('leaderboard') }}">View the leaderboard &rarr;</a>
+      <button id="reset">Start a new round</button>
+    </div>
+
+    <div class="flash-left" id="flash-left"></div>
+    <div class="flash-right" id="flash-right"></div>
+
+    <script>
+      (function () {
+        let pairs = [];
+        let order = [];
+        let current = 0;
+        let locked = false;
+
+        const $loading = document.getElementById("loading");
+        const $columns = document.getElementById("columns");
+        const $done = document.getElementById("done");
+        const $controls = document.getElementById("controls");
+        const $disclaimer = document.getElementById("disclaimer");
+        const $left = document.getElementById("left");
+        const $right = document.getElementById("right");
+        const $progress = document.getElementById("progress");
+        const $meta = document.getElementById("meta");
+        const $flashLeft = document.getElementById("flash-left");
+        const $flashRight = document.getElementById("flash-right");
+        const ROUND_SIZE = 10;
+
+        async function init() {
+          const pairsUrl = document.body.dataset.pairsUrl;
+          const res = await fetch(pairsUrl);
+          pairs = await res.json();
+
+          order = pairs.map((_, i) => i);
+          shuffle(order);
+          order = order.slice(0, ROUND_SIZE);
+
+          $loading.style.display = "none";
+
+          if (order.length === 0) {
+            showDone();
+          } else {
+            $columns.style.display = "flex";
+            $controls.style.display = "flex";
+            $disclaimer.style.display = "block";
+            showPair();
+          }
+        }
+
+        function shuffle(arr) {
+          for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+          }
+        }
+
+        function trimLyrics(text) {
+          const lines = text.split("\n");
+          return lines.slice(10, 30).join("\n");
+        }
+
+        function showPair() {
+          const pair = pairs[order[current]];
+          $left.textContent = trimLyrics(pair.left_lyrics);
+          $right.textContent = trimLyrics(pair.right_lyrics);
+          $meta.innerHTML = "<span>" + escapeHtml(pair.genre) + "</span>";
+          updateProgress();
+          $left.parentElement.scrollTop = 0;
+          $right.parentElement.scrollTop = 0;
+        }
+
+        function updateProgress() {
+          $progress.textContent = current + " / " + order.length + " judged";
+        }
+
+        function escapeHtml(s) {
+          const d = document.createElement("div");
+          d.textContent = s;
+          return d.innerHTML;
+        }
+
+        function flash(side) {
+          const el =
+            side === "left"
+              ? $flashLeft
+              : side === "right"
+                ? $flashRight
+                : null;
+          if (el) {
+            el.classList.add("show");
+            setTimeout(() => el.classList.remove("show"), 200);
+          }
+        }
+
+        function judge(rating) {
+          if (locked || current >= order.length) return;
+          locked = true;
+
+          if (rating === "A wins") flash("left");
+          else if (rating === "B wins") flash("right");
+
+          // No server POST — static site, just advance locally
+          current++;
+
+          setTimeout(() => {
+            if (current >= order.length) {
+              showDone();
+            } else {
+              showPair();
+            }
+            locked = false;
+          }, 300);
+        }
+
+        function showDone() {
+          $columns.style.display = "none";
+          $controls.style.display = "none";
+          $disclaimer.style.display = "none";
+          $done.style.display = "flex";
+          updateProgress();
+        }
+
+        document.getElementById("reset").addEventListener("click", () => {
+          $done.style.display = "none";
+          $loading.style.display = "flex";
+          current = 0;
+          order = pairs.map((_, i) => i);
+          shuffle(order);
+          order = order.slice(0, ROUND_SIZE);
+          $columns.style.display = "flex";
+          $controls.style.display = "flex";
+          $disclaimer.style.display = "block";
+          $loading.style.display = "none";
+          showPair();
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.repeat) return;
+          if (e.key === "j" || e.key === "J") judge("A wins");
+          else if (e.key === "k" || e.key === "K") judge("B wins");
+          else if (e.key === " ") {
+            e.preventDefault();
+            judge("Tie");
+          }
+        });
+
+        init();
+      })();
+    </script>
+  </body>
+</html>

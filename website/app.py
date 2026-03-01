@@ -13,7 +13,7 @@ from pathlib import Path
 
 from flask import Flask, g, jsonify, render_template, request
 
-app = Flask(__name__, template_folder="static", static_folder="static")
+app = Flask(__name__, template_folder="templates", static_folder="static")
 
 PAIRS_PATH = Path(__file__).resolve().parent / "pairs.json"
 DB_PATH = Path(__file__).resolve().parent / "judgments.db"
