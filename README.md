@@ -1,8 +1,6 @@
 # Mistral Global Hack 
 
-[![Watch the demo video](media/demo-thumbnail.jpg)](media/demo.mp4)
-
-▶️ [Watch the 2-minute demo video](media/demo.mp4)
+https://github.com/user-attachments/assets/a33569b5-03da-41ff-889c-253eb5fdefab
 
 Better song lyrics with supervised fine tuning with Mistral-7B.  
 AI-generated song lyrics — baseline vs prompt-engineered vs fine-tuned Mistral models, evaluated by automated scorers and blind human judgment.
